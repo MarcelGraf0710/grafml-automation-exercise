@@ -1,0 +1,59 @@
+name: CI
+
+on: [push]
+
+jobs:
+  style_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: "Install style checker"
+        run: pip install black
+      - name: "Run style check"
+        run: black --check .
+  
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: "Install pytest, matplotlib, numpy, and coverage"
+        run: pip install pytest matplotlib numpy coverage
+      - name: "Run coverage"
+        run: python -m coverage run -m pytest
+      - name: "Upload coverage artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-artifact
+          path: .coverage
+          retention-days: 1
+          include-hidden-files: true
+  
+  coverage_report:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+      - name: "Download coverage artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-artifact
+      - name: "Install coverage"
+        run: pip install coverage
+      - name: "Convert coverage to xml"
+        run: python -m coverage xml
+      - name: "Upload xml report artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-artifact
+          path: coverage.xml
+          retention-days: 14
+          include-hidden-files: true
